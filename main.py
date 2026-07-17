@@ -14,6 +14,12 @@ SPORTS = [
     "soccer_sweden_allsvenskan",
     "soccer_usa_mls",
     "soccer_australia_aleague",
+    "soccer_norway_eliteserien",
+    "soccer_denmark_superliga",
+    "soccer_finland_veikkausliiga",
+    "soccer_argentina_primera_division",
+    "soccer_mexico_ligamx",
+    "soccer_efl_champ",
 ]
 
 TEAM_CN = {
@@ -97,6 +103,12 @@ LEAGUE_EXPECTED = {
     "Allsvenskan": 2.70,
     "MLS": 2.85,
     "A-League": 2.65,
+    "Eliteserien": 2.70,
+    "Superliga": 2.65,
+    "Veikkausliiga": 2.55,
+    "Primera División": 2.40,
+    "Liga MX": 2.60,
+    "Championship": 2.55,
 }
 
 def send_telegram(message):
