@@ -1,13 +1,12 @@
 import os
 import requests
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from scipy.stats import poisson
 
 THE_ODDS_API_KEY = os.environ.get("THE_ODDS_API_KEY")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-# 而家優先監控嘅聯賽（The Odds API 嘅 sport key）
 SPORTS = [
     "soccer_japan_j_league",
     "soccer_korea_kleague1",
@@ -40,12 +39,11 @@ def calc_ev(prob, odds):
     return round((prob * (odds - 1) - (1 - prob)) * 100, 1)
 
 def get_odds_for_sport(sport_key):
-    """從 The Odds API 攞某個聯賽嘅 totals"""
     url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds/"
     params = {
         "apiKey": THE_ODDS_API_KEY,
-        "regions": "eu,uk",          # 歐洲 + 英國，大細水較齊
-        "markets": "totals",         # 只要入球大細
+        "regions": "eu,uk",
+        "markets": "totals",
         "oddsFormat": "decimal",
         "dateFormat": "iso"
     }
@@ -61,7 +59,6 @@ def get_odds_for_sport(sport_key):
     return []
 
 def extract_ou_25(bookmakers):
-    """從 bookmakers 入面搵最好嘅 2.5 大細"""
     best_over = None
     best_under = None
     best_book = None
@@ -103,30 +100,28 @@ def main():
     analyzed = 0
     value_count = 0
     
-    for match in all_matches[:10]:  # 最多顯示10場
+    for match in all_matches[:10]:
         home = match.get("home_team", "Home")
         away = match.get("away_team", "Away")
         sport_title = match.get("sport_title", "")
         
-        expected = 2.55  # 暫時固定，之後改真實
-        
-        over_p, under_p = calc_poisson(expected)
-        
-        over_odds, under_odds, book = extract_ou_25(match.get("bookmakers", []))
-        
-                # 處理比賽時間
+        # 比賽時間（香港時間）
         commence = match.get("commence_time", "")
         time_str = ""
         if commence:
             try:
-                # 轉成香港時間顯示
-                from datetime import datetime, timezone, timedelta
                 dt = datetime.fromisoformat(commence.replace("Z", "+00:00"))
                 hk_time = dt.astimezone(timezone(timedelta(hours=8)))
                 time_str = hk_time.strftime("%m-%d %H:%M")
             except:
                 time_str = commence[:16]
-
+        
+        expected = 2.55
+        
+        over_p, under_p = calc_poisson(expected)
+        
+        over_odds, under_odds, book = extract_ou_25(match.get("bookmakers", []))
+        
         message += f"📌 {home} vs {away}\n"
         if time_str:
             message += f"時間: {time_str} (HKT)\n"
