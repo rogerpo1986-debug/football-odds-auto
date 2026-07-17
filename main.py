@@ -8,8 +8,15 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 SPORTS = [
-    TEAM_CN = {
-    # 韓國 K League
+    "soccer_japan_j_league",
+    "soccer_korea_kleague1",
+    "soccer_brazil_campeonato",
+    "soccer_sweden_allsvenskan",
+    "soccer_usa_mls",
+    "soccer_australia_aleague",
+]
+
+TEAM_CN = {
     "Bucheon FC 1995": "富川1995",
     "FC Seoul": "首爾FC",
     "FC Anyang": "安養FC",
@@ -27,8 +34,6 @@ SPORTS = [
     "Daegu FC": "大邱FC",
     "Gimcheon Sangmu": "金泉尚武",
     "Suwon FC": "水原FC",
-
-    # 其他常見
     "Manchester United": "曼聯",
     "Liverpool": "利物浦",
     "Arsenal": "阿仙奴",
@@ -38,13 +43,6 @@ SPORTS = [
     "Barcelona": "巴塞隆拿",
     "Real Madrid": "皇家馬德里",
 }
-    "soccer_japan_j_league",
-    "soccer_korea_kleague1",
-    "soccer_brazil_campeonato",
-    "soccer_sweden_allsvenskan",
-    "soccer_usa_mls",
-    "soccer_australia_aleague",
-]
 
 def send_telegram(message):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
@@ -131,11 +129,12 @@ def main():
     value_count = 0
     
     for match in all_matches[:10]:
-        home = TEAM_CN.get(match.get("home_team", "Home"), match.get("home_team", "Home"))
-        away = TEAM_CN.get(match.get("away_team", "Away"), match.get("away_team", "Away"))
+        home_en = match.get("home_team", "Home")
+        away_en = match.get("away_team", "Away")
+        home = TEAM_CN.get(home_en, home_en)
+        away = TEAM_CN.get(away_en, away_en)
         sport_title = match.get("sport_title", "")
         
-        # 比賽時間（香港時間）
         commence = match.get("commence_time", "")
         time_str = ""
         if commence:
