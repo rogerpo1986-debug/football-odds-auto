@@ -114,7 +114,22 @@ def main():
         
         over_odds, under_odds, book = extract_ou_25(match.get("bookmakers", []))
         
+                # 處理比賽時間
+        commence = match.get("commence_time", "")
+        time_str = ""
+        if commence:
+            try:
+                # 轉成香港時間顯示
+                from datetime import datetime, timezone, timedelta
+                dt = datetime.fromisoformat(commence.replace("Z", "+00:00"))
+                hk_time = dt.astimezone(timezone(timedelta(hours=8)))
+                time_str = hk_time.strftime("%m-%d %H:%M")
+            except:
+                time_str = commence[:16]
+
         message += f"📌 {home} vs {away}\n"
+        if time_str:
+            message += f"時間: {time_str} (HKT)\n"
         if sport_title:
             message += f"聯賽: {sport_title}\n"
         message += f"預期總入: {expected}\n"
