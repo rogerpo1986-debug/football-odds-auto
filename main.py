@@ -2,6 +2,7 @@ import os
 import requests
 from datetime import datetime, timezone, timedelta
 from scipy.stats import poisson
+from collections import defaultdict
 
 THE_ODDS_API_KEY = os.environ.get("THE_ODDS_API_KEY")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -36,10 +37,6 @@ TEAM_CN = {
     "Ulsan HD": "蔚山現代",
     "Incheon United": "仁川聯",
     "Pohang Steelers": "浦項制鐵",
-    "Suwon Samsung Bluewings": "水原三星",
-    "Daegu FC": "大邱FC",
-    "Gimcheon Sangmu": "金泉尚武",
-    "Suwon FC": "水原FC",
     "Inter Miami CF": "邁阿密國際",
     "Chicago Fire": "芝加哥火焰",
     "San Jose Earthquakes": "聖荷西地震",
@@ -48,16 +45,15 @@ TEAM_CN = {
     "Vancouver Whitecaps FC": "溫哥華白帽",
     "Bahia": "巴伊亞",
     "Chapecoense": "沙佩科恩塞",
-    "Orgryte IS": "奧格里特",
-    "Djurgardens IF": "佐加頓斯",
-    "Halmstads BK": "哈爾姆斯塔德",
-    "BK Hacken": "哈肯",
     "Viking FK": "維京",
     "Sandefjord": "桑德菲jord",
     "Monterrey": "蒙特雷",
     "Santos Laguna": "桑托斯拉古納",
     "FC Copenhagen": "哥本哈根",
     "Lyngby": "林比",
+    "Bodo/Glimt": "博德閃耀",
+    "Fredrikstad FK": "腓特烈斯塔",
+    "HamKam": "漢坎",
 }
 
 LEAGUE_CN = {
@@ -173,10 +169,10 @@ def get_league_cn(sport_title):
     return sport_title
 
 def main():
-    print("=== 優化版分析開始 ===")
+    print("=== 分聯賽版分析開始 ===")
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     
-    message = f"⚽ 阿晴 Value 精選報告\n時間: {now}\n\n"
+    message = f"⚽ 阿晴 Value 精選報告（按聯賽）\n時間: {now}\n\n"
     
     all_matches = []
     for sport in SPORTS:
@@ -184,7 +180,8 @@ def main():
         if data:
             all_matches.extend(data)
     
-    value_list = []
+    # 按聯賽分組
+    league_dict = defaultdict(list)
     
     for match in all_matches:
         home_en = match.get("home_team", "Home")
@@ -218,11 +215,10 @@ def main():
         if max_ev < 3:
             continue
         
-        value_list.append({
+        league_dict[league_cn].append({
             "home": home,
             "away": away,
             "time": time_str,
-            "league": league_cn,
             "expected": expected,
             "over_p": over_p,
             "under_p": under_p,
@@ -230,32 +226,34 @@ def main():
             "under_odds": under_odds,
             "over_ev": over_ev,
             "under_ev": under_ev,
-            "book": book,
             "max_ev": max_ev
         })
     
-    value_list.sort(key=lambda x: x["max_ev"], reverse=True)
+    total_value = sum(len(v) for v in league_dict.values())
+    message += f"✅ 總共發現 {total_value} 場有 Value（EV ≥ +3）\n\n"
     
-    if not value_list:
-        message += "而家暫時冇發現 EV ≥ +3 嘅場次\n"
+    if not league_dict:
+        message += "而家暫時冇發現有 Value 嘅場次\n"
     else:
-        message += f"✅ 發現 {len(value_list)} 場有 Value（EV ≥ +3）\n\n"
-        
-        for item in value_list[:8]:
-            message += f"📌 {item['home']} vs {item['away']}\n"
-            if item['time']:
-                message += f"時間: {item['time']} (HKT)\n"
-            if item['league']:
-                message += f"聯賽: {item['league']}\n"
-            message += f"預期總入: {item['expected']:.2f}\n"
-            message += f"大球 {round(item['over_p']*100,1)}% | {item['over_odds']} | EV {item['over_ev']:+.1f}\n"
-            message += f"小球 {round(item['under_p']*100,1)}% | {item['under_odds']} | EV {item['under_ev']:+.1f}\n"
+        for league, matches in league_dict.items():
+            # 每個聯賽按 EV 排序，最多顯示 3 場
+            matches.sort(key=lambda x: x["max_ev"], reverse=True)
+            top_matches = matches[:3]
             
-            if item['over_ev'] >= 3:
-                message += "🔥 建議關注大球\n"
-            if item['under_ev'] >= 3:
-                message += "🔥 建議關注小球\n"
-            message += "\n"
+            message += f"【{league}】共 {len(matches)} 場\n"
+            
+            for item in top_matches:
+                message += f"📌 {item['home']} vs {item['away']}\n"
+                if item['time']:
+                    message += f"時間: {item['time']} (HKT)\n"
+                message += f"預期: {item['expected']:.2f} | 大 {item['over_odds']} (EV{item['over_ev']:+.1f}) | 細 {item['under_odds']} (EV{item['under_ev']:+.1f})\n"
+                if item['over_ev'] >= 3:
+                    message += "🔥 大球\n"
+                if item['under_ev'] >= 3:
+                    message += "🔥 小球\n"
+                message += "\n"
+            
+            message += "────────\n"
     
     message += "阿晴精選報告完"
     
