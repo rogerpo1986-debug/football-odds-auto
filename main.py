@@ -8,6 +8,36 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 SPORTS = [
+    TEAM_CN = {
+    # 韓國 K League
+    "Bucheon FC 1995": "富川1995",
+    "FC Seoul": "首爾FC",
+    "FC Anyang": "安養FC",
+    "Gwangju FC": "光州FC",
+    "Jeonbuk Hyundai Motors": "全北現代",
+    "Daejeon Citizen": "大田市民",
+    "Jeju United FC": "濟州聯",
+    "Jeju United": "濟州聯",
+    "Gangwon FC": "江原FC",
+    "Ulsan Hyundai FC": "蔚山現代",
+    "Ulsan HD": "蔚山現代",
+    "Incheon United": "仁川聯",
+    "Pohang Steelers": "浦項制鐵",
+    "Suwon Samsung Bluewings": "水原三星",
+    "Daegu FC": "大邱FC",
+    "Gimcheon Sangmu": "金泉尚武",
+    "Suwon FC": "水原FC",
+
+    # 其他常見
+    "Manchester United": "曼聯",
+    "Liverpool": "利物浦",
+    "Arsenal": "阿仙奴",
+    "Chelsea": "車路士",
+    "Manchester City": "曼城",
+    "Tottenham": "熱刺",
+    "Barcelona": "巴塞隆拿",
+    "Real Madrid": "皇家馬德里",
+}
     "soccer_japan_j_league",
     "soccer_korea_kleague1",
     "soccer_brazil_campeonato",
@@ -101,8 +131,8 @@ def main():
     value_count = 0
     
     for match in all_matches[:10]:
-        home = match.get("home_team", "Home")
-        away = match.get("away_team", "Away")
+        home = TEAM_CN.get(match.get("home_team", "Home"), match.get("home_team", "Home"))
+        away = TEAM_CN.get(match.get("away_team", "Away"), match.get("away_team", "Away"))
         sport_title = match.get("sport_title", "")
         
         # 比賽時間（香港時間）
