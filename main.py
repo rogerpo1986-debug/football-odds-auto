@@ -43,17 +43,58 @@ def calc_ev(prob, odds):
     return round((prob * (odds - 1) - (1 - prob)) * 100, 1)
 
 def get_events():
-    """只抓有機會有大細水嘅賽事"""
+    """只抓澳洲 A-League"""
     try:
         r = requests.get(
             "https://api.odds-api.io/v3/events",
             params={
                 "apiKey": ODDS_API_KEY,
                 "sport": "football",
-                "limit": 15,
+                "league": "australia-a-league",   # 澳洲全國聯賽
+                "limit": 20,
                 "status": "pending"
             },
             timeout=15
+        )
+        if r.status_code == 200:
+            data = r.json()
+            print(f"A-League 抓到 {len(data)} 場")
+            return data
+        else:
+            print("Events 錯誤:", r.status_code, r.text[:300])
+            # 如果 slug 唔啱，退回普通抓取再過濾
+            return get_events_fallback()
+    except Exception as e:
+        print("抓賽事失敗:", e)
+        return []
+
+def get_events_fallback():
+    """如果 league slug 唔啱，就抓全部再過濾有 Australia / A-League 字眼嘅"""
+    try:
+        r = requests.get(
+            "https://api.odds-api.io/v3/events",
+            params={
+                "apiKey": ODDS_API_KEY,
+                "sport": "football",
+                "limit": 30,
+                "status": "pending"
+            },
+            timeout=15
+        )
+        if r.status_code == 200:
+            events = r.json()
+            filtered = []
+            for e in events:
+                league_name = ""
+                if isinstance(e.get("league"), dict):
+                    league_name = e["league"].get("name", "") + " " + e["league"].get("slug", "")
+                if "australia" in league_name.lower() or "a-league" in league_name.lower() or "a league" in league_name.lower():
+                    filtered.append(e)
+            print(f"Fallback 過濾後有 {len(filtered)} 場澳洲相關")
+            return filtered
+    except:
+        pass
+    return []
         )
         if r.status_code == 200:
             return r.json()
