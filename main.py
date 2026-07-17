@@ -169,10 +169,13 @@ def get_league_cn(sport_title):
     return sport_title
 
 def main():
-    print("=== 分聯賽版分析開始 ===")
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    print("=== 只抓未來2天版 ===")
+    now = datetime.now(timezone.utc)
+    now_hk = now.astimezone(timezone(timedelta(hours=8)))
+    message = f"⚽ 阿晴 Value 精選報告（未來2天）\n時間: {now_hk.strftime('%Y-%m-%d %H:%M')}\n\n"
     
-    message = f"⚽ 阿晴 Value 精選報告（按聯賽）\n時間: {now}\n\n"
+    # 只保留未來 48 小時內嘅比賽
+    max_time = now + timedelta(hours=48)
     
     all_matches = []
     for sport in SPORTS:
@@ -180,10 +183,20 @@ def main():
         if data:
             all_matches.extend(data)
     
-    # 按聯賽分組
     league_dict = defaultdict(list)
     
     for match in all_matches:
+        commence = match.get("commence_time", "")
+        if not commence:
+            continue
+        
+        try:
+            match_time = datetime.fromisoformat(commence.replace("Z", "+00:00"))
+            if match_time > max_time or match_time < now:
+                continue  # 超過48小時或已經開始就跳過
+        except:
+            continue
+        
         home_en = match.get("home_team", "Home")
         away_en = match.get("away_team", "Away")
         home = TEAM_CN.get(home_en, home_en)
@@ -191,15 +204,8 @@ def main():
         sport_title = match.get("sport_title", "")
         league_cn = get_league_cn(sport_title)
         
-        commence = match.get("commence_time", "")
-        time_str = ""
-        if commence:
-            try:
-                dt = datetime.fromisoformat(commence.replace("Z", "+00:00"))
-                hk_time = dt.astimezone(timezone(timedelta(hours=8)))
-                time_str = hk_time.strftime("%m-%d %H:%M")
-            except:
-                time_str = commence[:16]
+        hk_time = match_time.astimezone(timezone(timedelta(hours=8)))
+        time_str = hk_time.strftime("%m-%d %H:%M")
         
         expected = get_expected(sport_title)
         over_p, under_p = calc_poisson(expected)
@@ -230,13 +236,12 @@ def main():
         })
     
     total_value = sum(len(v) for v in league_dict.values())
-    message += f"✅ 總共發現 {total_value} 場有 Value（EV ≥ +3）\n\n"
+    message += f"✅ 未來2天內發現 {total_value} 場有 Value（EV ≥ +3）\n\n"
     
     if not league_dict:
         message += "而家暫時冇發現有 Value 嘅場次\n"
     else:
         for league, matches in league_dict.items():
-            # 每個聯賽按 EV 排序，最多顯示 3 場
             matches.sort(key=lambda x: x["max_ev"], reverse=True)
             top_matches = matches[:3]
             
@@ -244,8 +249,7 @@ def main():
             
             for item in top_matches:
                 message += f"📌 {item['home']} vs {item['away']}\n"
-                if item['time']:
-                    message += f"時間: {item['time']} (HKT)\n"
+                message += f"時間: {item['time']} (HKT)\n"
                 message += f"預期: {item['expected']:.2f} | 大 {item['over_odds']} (EV{item['over_ev']:+.1f}) | 細 {item['under_odds']} (EV{item['under_ev']:+.1f})\n"
                 if item['over_ev'] >= 3:
                     message += "🔥 大球\n"
