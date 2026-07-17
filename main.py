@@ -16,6 +16,7 @@ SPORTS = [
     "soccer_australia_aleague",
 ]
 
+# 中文隊名
 TEAM_CN = {
     "Bucheon FC 1995": "富川1995",
     "FC Seoul": "首爾FC",
@@ -34,14 +35,16 @@ TEAM_CN = {
     "Daegu FC": "大邱FC",
     "Gimcheon Sangmu": "金泉尚武",
     "Suwon FC": "水原FC",
-    "Manchester United": "曼聯",
-    "Liverpool": "利物浦",
-    "Arsenal": "阿仙奴",
-    "Chelsea": "車路士",
-    "Manchester City": "曼城",
-    "Tottenham": "熱刺",
-    "Barcelona": "巴塞隆拿",
-    "Real Madrid": "皇家馬德里",
+}
+
+# 聯賽預期總入球（之後可再細分）
+LEAGUE_EXPECTED = {
+    "K League 1": 2.60,
+    "J1 League": 2.50,
+    "Brazil Serie A": 2.75,
+    "Allsvenskan": 2.70,
+    "MLS": 2.85,
+    "A-League": 2.65,
 }
 
 def send_telegram(message):
@@ -110,6 +113,13 @@ def extract_ou_25(bookmakers):
                                 best_book = book_name
     return best_over, best_under, best_book
 
+def get_expected(sport_title):
+    """根據聯賽名稱攞預期總入球"""
+    for key, value in LEAGUE_EXPECTED.items():
+        if key.lower() in sport_title.lower():
+            return value
+    return 2.55  # 預設
+
 def main():
     print("=== The Odds API 分析開始 ===")
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -145,7 +155,8 @@ def main():
             except:
                 time_str = commence[:16]
         
-        expected = 2.55
+        # 真實一點嘅預期入球
+        expected = get_expected(sport_title)
         
         over_p, under_p = calc_poisson(expected)
         
@@ -156,7 +167,7 @@ def main():
             message += f"時間: {time_str} (HKT)\n"
         if sport_title:
             message += f"聯賽: {sport_title}\n"
-        message += f"預期總入: {expected}\n"
+        message += f"預期總入: {expected:.2f}\n"
         
         if over_odds and under_odds:
             over_ev = calc_ev(over_p, over_odds)
