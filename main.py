@@ -3,12 +3,19 @@ import requests
 from datetime import datetime
 from scipy.stats import poisson
 
-ODDS_API_KEY = os.environ.get("ODDS_API_KEY")
+THE_ODDS_API_KEY = os.environ.get("THE_ODDS_API_KEY")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-def to_cn(name):
-    return name
+# 而家優先監控嘅聯賽（The Odds API 嘅 sport key）
+SPORTS = [
+    "soccer_japan_j_league",
+    "soccer_korea_kleague1",
+    "soccer_brazil_campeonato",
+    "soccer_sweden_allsvenskan",
+    "soccer_usa_mls",
+    "soccer_australia_aleague",
+]
 
 def send_telegram(message):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
@@ -32,143 +39,104 @@ def calc_ev(prob, odds):
         return 0.0
     return round((prob * (odds - 1) - (1 - prob)) * 100, 1)
 
-def get_events():
+def get_odds_for_sport(sport_key):
+    """從 The Odds API 攞某個聯賽嘅 totals"""
+    url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds/"
+    params = {
+        "apiKey": THE_ODDS_API_KEY,
+        "regions": "eu,uk",          # 歐洲 + 英國，大細水較齊
+        "markets": "totals",         # 只要入球大細
+        "oddsFormat": "decimal",
+        "dateFormat": "iso"
+    }
     try:
-        r = requests.get(
-            "https://api.odds-api.io/v3/events",
-            params={
-                "apiKey": ODDS_API_KEY,
-                "sport": "football",
-                "league": "australia-a-league",
-                "limit": 20,
-                "status": "pending"
-            },
-            timeout=15
-        )
-        if r.status_code == 200:
-            data = r.json()
-            print("A-League 抓到", len(data), "場")
-            if len(data) > 0:
-                return data
-    except Exception as e:
-        print("A-League 失敗:", e)
-
-    # fallback
-    try:
-        r = requests.get(
-            "https://api.odds-api.io/v3/events",
-            params={
-                "apiKey": ODDS_API_KEY,
-                "sport": "football",
-                "limit": 40,
-                "status": "pending"
-            },
-            timeout=15
-        )
-        if r.status_code == 200:
-            events = r.json()
-            filtered = []
-            for e in events:
-                league_name = ""
-                if isinstance(e.get("league"), dict):
-                    league_name = (e["league"].get("name", "") + " " + e["league"].get("slug", "")).lower()
-                if "australia" in league_name or "a-league" in league_name:
-                    filtered.append(e)
-            print("Fallback 有", len(filtered), "場")
-            return filtered
-    except Exception as e:
-        print("Fallback 失敗:", e)
-    return []
-
-def get_odds(event_id):
-    try:
-        r = requests.get(
-            "https://api.odds-api.io/v3/odds",
-            params={
-                "apiKey": ODDS_API_KEY,
-                "eventId": event_id,
-                "bookmakers": "Pinnacle,Bet365,Unibet,SingBet"
-            },
-            timeout=15
-        )
+        r = requests.get(url, params=params, timeout=15)
+        print(f"{sport_key} 狀態: {r.status_code}")
         if r.status_code == 200:
             return r.json()
+        else:
+            print(f"錯誤: {r.text[:200]}")
     except Exception as e:
-        print("抓賠率失敗:", e)
-    return None
+        print(f"抓 {sport_key} 失敗:", e)
+    return []
 
-def extract_ou_25(odds_data):
-    if not odds_data or "bookmakers" not in odds_data:
-        return None, None, None
-
+def extract_ou_25(bookmakers):
+    """從 bookmakers 入面搵最好嘅 2.5 大細"""
     best_over = None
     best_under = None
     best_book = None
 
-    for bookie, markets in odds_data.get("bookmakers", {}).items():
-        for market in markets:
-            name = str(market.get("name", "")).lower()
-            if "total" in name or "over" in name or "under" in name:
-                for odd in market.get("odds", []):
-                    line = odd.get("hdp") or odd.get("max") or odd.get("point") or odd.get("total")
-                    try:
-                        if line is not None and abs(float(line) - 2.5) < 0.05:
-                            over = float(odd.get("over", 0) or 0)
-                            under = float(odd.get("under", 0) or 0)
-                            if over > 1.01 and under > 1.01:
-                                if best_over is None or over > best_over:
-                                    best_over = over
-                                    best_under = under
-                                    best_book = bookie
-                    except:
-                        continue
+    for book in bookmakers:
+        book_name = book.get("title", book.get("key", ""))
+        for market in book.get("markets", []):
+            if market.get("key") == "totals":
+                for outcome in market.get("outcomes", []):
+                    point = outcome.get("point")
+                    if point is not None and abs(float(point) - 2.5) < 0.05:
+                        name = outcome.get("name", "").lower()
+                        price = float(outcome.get("price", 0))
+                        if name == "over" and price > 1.01:
+                            if best_over is None or price > best_over:
+                                best_over = price
+                                best_book = book_name
+                        elif name == "under" and price > 1.01:
+                            if best_under is None or price > best_under:
+                                best_under = price
+                                best_book = book_name
     return best_over, best_under, best_book
 
 def main():
-    print("=== 開始 ===")
+    print("=== The Odds API 分析開始 ===")
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     
-    events = get_events()
-    message = "⚽ 阿晴 Value 分析報告\n時間: " + now + "\n\n"
-    message += "✅ 抓到 " + str(len(events)) + " 場賽事\n\n"
+    message = f"⚽ 阿晴 Value 分析報告 (The Odds API)\n時間: {now}\n\n"
+    
+    all_matches = []
+    
+    for sport in SPORTS:
+        data = get_odds_for_sport(sport)
+        if data:
+            all_matches.extend(data)
+    
+    message += f"✅ 總共抓到 {len(all_matches)} 場有大細水嘅賽事\n\n"
     
     analyzed = 0
     value_count = 0
     
-    for event in events[:8]:
-        home = event.get("home", "Home")
-        away = event.get("away", "Away")
-        event_id = event.get("id")
-        league = ""
-        if isinstance(event.get("league"), dict):
-            league = event["league"].get("name", "")
+    for match in all_matches[:10]:  # 最多顯示10場
+        home = match.get("home_team", "Home")
+        away = match.get("away_team", "Away")
+        sport_title = match.get("sport_title", "")
         
-        expected = 2.55
+        expected = 2.55  # 暫時固定，之後改真實
+        
         over_p, under_p = calc_poisson(expected)
         
-        odds_data = get_odds(event_id) if event_id else None
-        over_odds, under_odds, book = extract_ou_25(odds_data) if odds_data else (None, None, None)
+        over_odds, under_odds, book = extract_ou_25(match.get("bookmakers", []))
         
-        message += "📌 " + home + " vs " + away + "\n"
-        if league:
-            message += "聯賽: " + league + "\n"
-        message += "預期總入: " + str(expected) + "\n"
+        message += f"📌 {home} vs {away}\n"
+        if sport_title:
+            message += f"聯賽: {sport_title}\n"
+        message += f"預期總入: {expected}\n"
         
         if over_odds and under_odds:
             over_ev = calc_ev(over_p, over_odds)
             under_ev = calc_ev(under_p, under_odds)
-            message += "大球 " + str(round(over_p*100,1)) + "% | " + str(over_odds) + " (" + str(book) + ") | EV " + str(over_ev) + "\n"
-            message += "小球 " + str(round(under_p*100,1)) + "% | " + str(under_odds) + " (" + str(book) + ") | EV " + str(under_ev) + "\n"
+            
+            message += f"大球 {round(over_p*100,1)}% | {over_odds} ({book}) | EV {over_ev:+.1f}\n"
+            message += f"小球 {round(under_p*100,1)}% | {under_odds} ({book}) | EV {under_ev:+.1f}\n"
+            
             if over_ev > 5 or under_ev > 5:
                 message += "🔥 有 Value！\n"
                 value_count += 1
             analyzed += 1
         else:
             message += "暫無 2.5 真實大細水\n"
+        
         message += "\n"
     
-    message += "成功分析真實賠率: " + str(analyzed) + " 場\n"
-    message += "發現潛在 Value: " + str(value_count) + " 場\n"
+    message += f"成功分析真實賠率: {analyzed} 場\n"
+    message += f"發現潛在 Value: {value_count} 場\n"
     message += "阿晴繼續優化中"
     
     print(message)
