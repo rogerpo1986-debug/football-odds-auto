@@ -80,4 +80,133 @@ def get_odds_for_sport(sport_key):
         r = requests.get(url, params=params, timeout=15)
         print(f"{sport_key} 狀態: {r.status_code}")
         if r.status_code == 200:
-            return r.json
+            return r.json()
+        else:
+            print(f"錯誤: {r.text[:200]}")
+            return []
+    except Exception as e:
+        print(f"抓 {sport_key} 失敗:", e)
+        return []
+
+def extract_ou_25(bookmakers):
+    best_over = None
+    best_under = None
+    best_book = None
+
+    for book in bookmakers:
+        book_name = book.get("title", book.get("key", ""))
+        for market in book.get("markets", []):
+            if market.get("key") == "totals":
+                for outcome in market.get("outcomes", []):
+                    point = outcome.get("point")
+                    if point is not None and abs(float(point) - 2.5) < 0.05:
+                        name = outcome.get("name", "").lower()
+                        price = float(outcome.get("price", 0))
+                        if name == "over" and price > 1.01:
+                            if best_over is None or price > best_over:
+                                best_over = price
+                                best_book = book_name
+                        elif name == "under" and price > 1.01:
+                            if best_under is None or price > best_under:
+                                best_under = price
+                                best_book = book_name
+    return best_over, best_under, best_book
+
+def get_expected(sport_title):
+    for key, value in LEAGUE_EXPECTED.items():
+        if key.lower() in sport_title.lower():
+            return value
+    return 2.55
+
+def main():
+    print("=== 優化版分析開始 ===")
+    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    
+    message = f"⚽ 阿晴 Value 精選報告\n時間: {now}\n\n"
+    
+    all_matches = []
+    for sport in SPORTS:
+        data = get_odds_for_sport(sport)
+        if data:
+            all_matches.extend(data)
+    
+    value_list = []
+    
+    for match in all_matches:
+        home_en = match.get("home_team", "Home")
+        away_en = match.get("away_team", "Away")
+        home = TEAM_CN.get(home_en, home_en)
+        away = TEAM_CN.get(away_en, away_en)
+        sport_title = match.get("sport_title", "")
+        
+        commence = match.get("commence_time", "")
+        time_str = ""
+        if commence:
+            try:
+                dt = datetime.fromisoformat(commence.replace("Z", "+00:00"))
+                hk_time = dt.astimezone(timezone(timedelta(hours=8)))
+                time_str = hk_time.strftime("%m-%d %H:%M")
+            except:
+                time_str = commence[:16]
+        
+        expected = get_expected(sport_title)
+        over_p, under_p = calc_poisson(expected)
+        over_odds, under_odds, book = extract_ou_25(match.get("bookmakers", []))
+        
+        if not over_odds or not under_odds:
+            continue
+        
+        over_ev = calc_ev(over_p, over_odds)
+        under_ev = calc_ev(under_p, under_odds)
+        
+        max_ev = max(over_ev, under_ev)
+        if max_ev < 3:
+            continue
+        
+        value_list.append({
+            "home": home,
+            "away": away,
+            "time": time_str,
+            "league": sport_title,
+            "expected": expected,
+            "over_p": over_p,
+            "under_p": under_p,
+            "over_odds": over_odds,
+            "under_odds": under_odds,
+            "over_ev": over_ev,
+            "under_ev": under_ev,
+            "book": book,
+            "max_ev": max_ev
+        })
+    
+    value_list.sort(key=lambda x: x["max_ev"], reverse=True)
+    
+    if not value_list:
+        message += "而家暫時冇發現 EV ≥ +3 嘅場次\n"
+    else:
+        message += f"✅ 發現 {len(value_list)} 場有 Value（EV ≥ +3）\n\n"
+        
+        for item in value_list[:8]:
+            message += f"📌 {item['home']} vs {item['away']}\n"
+            if item['time']:
+                message += f"時間: {item['time']} (HKT)\n"
+            if item['league']:
+                message += f"聯賽: {item['league']}\n"
+            message += f"預期總入: {item['expected']:.2f}\n"
+            message += f"大球 {round(item['over_p']*100,1)}% | {item['over_odds']} | EV {item['over_ev']:+.1f}\n"
+            message += f"小球 {round(item['under_p']*100,1)}% | {item['under_odds']} | EV {item['under_ev']:+.1f}\n"
+            
+            if item['over_ev'] >= 3:
+                message += "🔥 建議關注大球\n"
+            if item['under_ev'] >= 3:
+                message += "🔥 建議關注小球\n"
+            message += "\n"
+    
+    message += "阿晴精選報告完"
+    
+    print(message)
+    send_telegram(message)
+    print("=== 完成 ===")
+
+if __name__ == "__main__":
+    main()
