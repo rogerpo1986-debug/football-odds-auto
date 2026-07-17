@@ -17,6 +17,7 @@ SPORTS = [
 ]
 
 TEAM_CN = {
+    # 韓國
     "Bucheon FC 1995": "富川1995",
     "FC Seoul": "首爾FC",
     "FC Anyang": "安養FC",
@@ -34,6 +35,59 @@ TEAM_CN = {
     "Daegu FC": "大邱FC",
     "Gimcheon Sangmu": "金泉尚武",
     "Suwon FC": "水原FC",
+
+    # MLS
+    "Inter Miami CF": "邁阿密國際",
+    "Chicago Fire": "芝加哥火焰",
+    "San Jose Earthquakes": "聖荷西地震",
+    "Orlando City SC": "奧蘭多城",
+    "FC Cincinnati": "辛辛那提",
+    "Vancouver Whitecaps FC": "溫哥華白帽",
+    "Los Angeles FC": "洛杉磯FC",
+    "LA Galaxy": "洛杉磯銀河",
+    "Seattle Sounders FC": "西雅圖海灣人",
+    "Portland Timbers": "波特蘭伐木者",
+    "New York City FC": "紐約城",
+    "New York Red Bulls": "紐約紅牛",
+    "Atlanta United FC": "亞特蘭大聯",
+    "Columbus Crew": "哥倫布機員",
+    "Philadelphia Union": "費城聯",
+    "Toronto FC": "多倫多FC",
+    "CF Montreal": "蒙特利爾",
+    "Nashville SC": "納什維爾",
+    "Austin FC": "奧斯汀FC",
+    "Houston Dynamo": "休斯頓迪納摩",
+    "Sporting Kansas City": "堪薩斯城體育",
+    "Minnesota United FC": "明尼蘇達聯",
+    "Real Salt Lake": "皇家鹽湖城",
+    "Colorado Rapids": "科羅拉多急流",
+    "FC Dallas": "達拉斯FC",
+
+    # 巴西
+    "Bahia": "巴伊亞",
+    "Chapecoense": "沙佩科恩塞",
+    "Flamengo": "法林明高",
+    "Palmeiras": "帕爾梅拉斯",
+    "Corinthians": "哥連泰斯",
+    "Sao Paulo": "聖保羅",
+    "Santos": "山度士",
+    "Gremio": "格雷米奧",
+    "Internacional": "國際體育會",
+    "Atletico Mineiro": "米內羅競技",
+    "Fluminense": "弗魯米嫩塞",
+    "Botafogo": "保地花高",
+    "Cruzeiro": "克魯塞羅",
+    "Vasco da Gama": "華斯高",
+
+    # 瑞典
+    "Orgryte IS": "奧格里特",
+    "Djurgardens IF": "佐加頓斯",
+    "Halmstads BK": "哈爾姆斯塔德",
+    "BK Hacken": "哈肯",
+    "Malmo FF": "馬爾默",
+    "AIK": "AIK索尔纳",
+    "Hammarby": "咸馬比",
+    "IFK Goteborg": "哥德堡",
 }
 
 LEAGUE_EXPECTED = {
