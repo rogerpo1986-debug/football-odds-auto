@@ -23,7 +23,6 @@ SPORTS = [
 ]
 
 TEAM_CN = {
-    # 韓國
     "Bucheon FC 1995": "富川1995",
     "FC Seoul": "首爾FC",
     "FC Anyang": "安養FC",
@@ -41,59 +40,42 @@ TEAM_CN = {
     "Daegu FC": "大邱FC",
     "Gimcheon Sangmu": "金泉尚武",
     "Suwon FC": "水原FC",
-
-    # MLS
     "Inter Miami CF": "邁阿密國際",
     "Chicago Fire": "芝加哥火焰",
     "San Jose Earthquakes": "聖荷西地震",
     "Orlando City SC": "奧蘭多城",
     "FC Cincinnati": "辛辛那提",
     "Vancouver Whitecaps FC": "溫哥華白帽",
-    "Los Angeles FC": "洛杉磯FC",
-    "LA Galaxy": "洛杉磯銀河",
-    "Seattle Sounders FC": "西雅圖海灣人",
-    "Portland Timbers": "波特蘭伐木者",
-    "New York City FC": "紐約城",
-    "New York Red Bulls": "紐約紅牛",
-    "Atlanta United FC": "亞特蘭大聯",
-    "Columbus Crew": "哥倫布機員",
-    "Philadelphia Union": "費城聯",
-    "Toronto FC": "多倫多FC",
-    "CF Montreal": "蒙特利爾",
-    "Nashville SC": "納什維爾",
-    "Austin FC": "奧斯汀FC",
-    "Houston Dynamo": "休斯頓迪納摩",
-    "Sporting Kansas City": "堪薩斯城體育",
-    "Minnesota United FC": "明尼蘇達聯",
-    "Real Salt Lake": "皇家鹽湖城",
-    "Colorado Rapids": "科羅拉多急流",
-    "FC Dallas": "達拉斯FC",
-
-    # 巴西
     "Bahia": "巴伊亞",
     "Chapecoense": "沙佩科恩塞",
-    "Flamengo": "法林明高",
-    "Palmeiras": "帕爾梅拉斯",
-    "Corinthians": "哥連泰斯",
-    "Sao Paulo": "聖保羅",
-    "Santos": "山度士",
-    "Gremio": "格雷米奧",
-    "Internacional": "國際體育會",
-    "Atletico Mineiro": "米內羅競技",
-    "Fluminense": "弗魯米嫩塞",
-    "Botafogo": "保地花高",
-    "Cruzeiro": "克魯塞羅",
-    "Vasco da Gama": "華斯高",
-
-    # 瑞典
     "Orgryte IS": "奧格里特",
     "Djurgardens IF": "佐加頓斯",
     "Halmstads BK": "哈爾姆斯塔德",
     "BK Hacken": "哈肯",
-    "Malmo FF": "馬爾默",
-    "AIK": "AIK索尔纳",
-    "Hammarby": "咸馬比",
-    "IFK Goteborg": "哥德堡",
+    "Viking FK": "維京",
+    "Sandefjord": "桑德菲jord",
+    "Monterrey": "蒙特雷",
+    "Santos Laguna": "桑托斯拉古納",
+    "FC Copenhagen": "哥本哈根",
+    "Lyngby": "林比",
+}
+
+LEAGUE_CN = {
+    "K League 1": "韓國K聯賽",
+    "J1 League": "日本J1",
+    "Brazil Serie A": "巴西甲組",
+    "Allsvenskan": "瑞典超",
+    "MLS": "美國大聯盟",
+    "A-League": "澳洲A聯賽",
+    "Eliteserien": "挪威超",
+    "Eliteserien - Norway": "挪威超",
+    "Superliga": "丹麥超",
+    "Denmark Superliga": "丹麥超",
+    "Veikkausliiga": "芬蘭聯賽",
+    "Primera División": "阿根廷甲",
+    "Liga MX": "墨西哥聯賽",
+    "Championship": "英冠",
+    "EFL Championship": "英冠",
 }
 
 LEAGUE_EXPECTED = {
@@ -184,6 +166,12 @@ def get_expected(sport_title):
             return value
     return 2.55
 
+def get_league_cn(sport_title):
+    for key, value in LEAGUE_CN.items():
+        if key.lower() in sport_title.lower():
+            return value
+    return sport_title
+
 def main():
     print("=== 優化版分析開始 ===")
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -204,6 +192,7 @@ def main():
         home = TEAM_CN.get(home_en, home_en)
         away = TEAM_CN.get(away_en, away_en)
         sport_title = match.get("sport_title", "")
+        league_cn = get_league_cn(sport_title)
         
         commence = match.get("commence_time", "")
         time_str = ""
@@ -233,7 +222,7 @@ def main():
             "home": home,
             "away": away,
             "time": time_str,
-            "league": sport_title,
+            "league": league_cn,
             "expected": expected,
             "over_p": over_p,
             "under_p": under_p,
