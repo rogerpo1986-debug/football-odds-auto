@@ -14,13 +14,20 @@ SPORTS = [
     "soccer_brazil_campeonato",
     "soccer_sweden_allsvenskan",
     "soccer_usa_mls",
-    "soccer_australia_a_league",   # 澳洲A聯賽
+    "soccer_australia_a_league",
     "soccer_norway_eliteserien",
     "soccer_denmark_superliga",
     "soccer_finland_veikkausliiga",
     "soccer_argentina_primera_division",
     "soccer_mexico_ligamx",
     "soccer_efl_champ",
+    "soccer_russia_premier_league",   # 俄羅斯超級聯賽
+    "soccer_uruguay_primera_division", # 烏拉圭甲組
+    "soccer_scotland_premiership",    # 蘇格蘭聯賽
+    "soccer_brazil_serie_b",          # 巴西乙組
+    "soccer_australia_nsw",           # 澳洲新南威爾斯
+    "soccer_australia_victoria",      # 澳洲維多利亞
+    "soccer_australia_queensland",    # 澳洲昆士蘭
 ]
 
 TEAM_CN = {
@@ -64,14 +71,18 @@ LEAGUE_CN = {
     "MLS": "美國大聯盟",
     "A-League": "澳洲A聯賽",
     "Eliteserien": "挪威超",
-    "Eliteserien - Norway": "挪威超",
     "Superliga": "丹麥超",
-    "Denmark Superliga": "丹麥超",
     "Veikkausliiga": "芬蘭聯賽",
     "Primera División": "阿根廷甲",
     "Liga MX": "墨西哥聯賽",
     "Championship": "英冠",
-    "EFL Championship": "英冠",
+    "Russia Premier League": "俄羅斯超",
+    "Uruguay Primera Division": "烏拉圭甲組",
+    "Scotland Premiership": "蘇格蘭超",
+    "Brazil Serie B": "巴西乙組",
+    "Australia NSW": "澳洲新南威爾斯",
+    "Australia Victoria": "澳洲維多利亞",
+    "Australia Queensland": "澳洲昆士蘭",
 }
 
 LEAGUE_EXPECTED = {
@@ -87,6 +98,10 @@ LEAGUE_EXPECTED = {
     "Primera División": 2.40,
     "Liga MX": 2.60,
     "Championship": 2.55,
+    "Russia Premier League": 2.60,
+    "Uruguay Primera Division": 2.45,
+    "Scotland Premiership": 2.80,
+    "Brazil Serie B": 2.40,
 }
 
 def send_telegram(message):
@@ -169,7 +184,7 @@ def get_league_cn(sport_title):
     return sport_title
 
 def main():
-    print("=== 只抓未來2天版 ===")
+    print("=== 多聯賽版 ===")
     now = datetime.now(timezone.utc)
     now_hk = now.astimezone(timezone(timedelta(hours=8)))
     message = f"⚽ 阿晴 Value 精選報告（未來2天）\n時間: {now_hk.strftime('%Y-%m-%d %H:%M')}\n\n"
