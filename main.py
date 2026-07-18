@@ -14,7 +14,7 @@ SPORTS = [
     "soccer_brazil_campeonato",
     "soccer_sweden_allsvenskan",
     "soccer_usa_mls",
-    "soccer_australia_aleague",
+    "soccer_australia_a_league",   # 澳洲A聯賽
     "soccer_norway_eliteserien",
     "soccer_denmark_superliga",
     "soccer_finland_veikkausliiga",
@@ -174,7 +174,6 @@ def main():
     now_hk = now.astimezone(timezone(timedelta(hours=8)))
     message = f"⚽ 阿晴 Value 精選報告（未來2天）\n時間: {now_hk.strftime('%Y-%m-%d %H:%M')}\n\n"
     
-    # 只保留未來 48 小時內嘅比賽
     max_time = now + timedelta(hours=48)
     
     all_matches = []
@@ -193,7 +192,7 @@ def main():
         try:
             match_time = datetime.fromisoformat(commence.replace("Z", "+00:00"))
             if match_time > max_time or match_time < now:
-                continue  # 超過48小時或已經開始就跳過
+                continue
         except:
             continue
         
