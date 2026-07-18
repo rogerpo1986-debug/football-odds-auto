@@ -14,20 +14,18 @@ SPORTS = [
     "soccer_brazil_campeonato",
     "soccer_sweden_allsvenskan",
     "soccer_usa_mls",
-    "soccer_australia_a_league",
+    "soccer_australia_a_league",   # 澳洲A聯賽
+    "soccer_a_league",             # 另一種寫法
     "soccer_norway_eliteserien",
     "soccer_denmark_superliga",
     "soccer_finland_veikkausliiga",
     "soccer_argentina_primera_division",
     "soccer_mexico_ligamx",
     "soccer_efl_champ",
-    "soccer_russia_premier_league",   # 俄羅斯超級聯賽
-    "soccer_uruguay_primera_division", # 烏拉圭甲組
-    "soccer_scotland_premiership",    # 蘇格蘭聯賽
-    "soccer_brazil_serie_b",          # 巴西乙組
-    "soccer_australia_nsw",           # 澳洲新南威爾斯
-    "soccer_australia_victoria",      # 澳洲維多利亞
-    "soccer_australia_queensland",    # 澳洲昆士蘭
+    "soccer_russia_premier_league",
+    "soccer_uruguay_primera_division",
+    "soccer_scotland_premiership",
+    "soccer_brazil_serie_b",
 ]
 
 TEAM_CN = {
@@ -80,9 +78,6 @@ LEAGUE_CN = {
     "Uruguay Primera Division": "烏拉圭甲組",
     "Scotland Premiership": "蘇格蘭超",
     "Brazil Serie B": "巴西乙組",
-    "Australia NSW": "澳洲新南威爾斯",
-    "Australia Victoria": "澳洲維多利亞",
-    "Australia Queensland": "澳洲昆士蘭",
 }
 
 LEAGUE_EXPECTED = {
